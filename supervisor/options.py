@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 import ConfigParser
 import socket
 import getopt
@@ -52,6 +54,8 @@ from supervisor import poller
 mydir = os.path.abspath(os.path.dirname(__file__))
 version_txt = os.path.join(mydir, 'version.txt')
 VERSION = open(version_txt).read().strip()
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 def normalize_path(v):
     return os.path.normpath(os.path.abspath(os.path.expanduser(v)))
@@ -1359,7 +1363,7 @@ class ServerOptions(Options):
             limits.append(
                 {
                 'msg':('The minimum number of file descriptors required '
-                       'to run this process is %(min_limit)s as per the "minfds" '
+                       'to run this process is %(min)s as per the "minfds" '
                        'command-line argument or config file setting. '
                        'The current environment will only allow you '
                        'to open %(hard)s file descriptors.  Either raise '
@@ -1375,7 +1379,7 @@ class ServerOptions(Options):
             limits.append(
                 {
                 'msg':('The minimum number of available processes required '
-                       'to run this program is %(min_limit)s as per the "minprocs" '
+                       'to run this program is %(min)s as per the "minprocs" '
                        'command-line argument or config file setting. '
                        'The current environment will only allow you '
                        'to open %(hard)s processes.  Either raise '
@@ -1389,7 +1393,7 @@ class ServerOptions(Options):
                 })
 
         for limit in limits:
-            min_limit = limit['min']
+            min = limit['min']
             res = limit['resource']
             msg = limit['msg']
             name = limit['name']
@@ -1397,16 +1401,16 @@ class ServerOptions(Options):
 
             soft, hard = resource.getrlimit(res)
 
-            if (soft < min_limit) and (soft != -1): # -1 means unlimited
-                if (hard < min_limit) and (hard != -1):
+            if (soft < min) and (soft != -1): # -1 means unlimited
+                if (hard < min) and (hard != -1):
                     # setrlimit should increase the hard limit if we are
                     # root, if not then setrlimit raises and we print usage
-                    hard = min_limit
+                    hard = min
 
                 try:
-                    resource.setrlimit(res, (min_limit, hard))
+                    resource.setrlimit(res, (min, hard))
                     self.parse_infos.append('Increased %(name)s limit to '
-                                '%(min_limit)s' % locals())
+                                '%(min)s' % locals())
                 except (resource.error, ValueError):
                     self.usage(msg % locals())
 
@@ -1789,15 +1793,6 @@ class ProcessConfig(Config):
                 return False
 
         return True
-
-    def get_path(self):
-        '''Return a list corresponding to $PATH that is configured to be set
-        in the process environment, or the system default.'''
-        if self.environment is not None:
-            path = self.environment.get('PATH')
-            if path is not None:
-                return path.split(os.pathsep)
-        return self.options.get_path()
 
     def create_autochildlogs(self):
         # temporary logfiles which are erased at start time

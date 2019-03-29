@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 # -*- Mode: Python -*-
 #       $Id: filesys.py,v 1.9 2003/12/24 16:10:56 akuchling Exp $
 #       Author: Sam Rushing <rushing@nightmare.com>

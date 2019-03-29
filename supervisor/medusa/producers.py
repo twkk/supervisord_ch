@@ -1,4 +1,6 @@
+# coding: utf8
 # -*- Mode: Python -*-
+
 
 RCS_ID = '$Id: producers.py,v 1.9 2004/04/21 13:56:28 akuchling Exp $'
 

@@ -451,7 +451,7 @@ class StatusView(MeldView):
         processname = form.get('processname')
         action = form.get('action')
         message = form.get('message')
-
+        kk_server_url = 'http://dev1.abrazotech.com'
         if action:
             if not self.callback:
                 self.callback = self.make_callback(processname, action)
@@ -462,10 +462,10 @@ class StatusView(MeldView):
                 if message is NOT_DONE_YET:
                     return NOT_DONE_YET
                 if message is not None:
-                    server_url = form['SERVER_URL']
-                    location = server_url + "/" + '?message=%s' % urllib.quote(
-                        message)
+                    #server_url = form['SERVER_URL']
+                    location = kk_server_url + ":" + '%s' % urllib.quote(message)
                     response['headers']['Location'] = location
+                    #server_url + "/" + '?message=%s' % urllib.quote(message)
 
         supervisord = self.context.supervisord
         rpcinterface = RootRPCInterface(
@@ -516,11 +516,14 @@ class StatusView(MeldView):
 
                 info_text = tr_element.findmeld('info_text')
                 info_text.content(item['description'])
-
+                #TODO
                 anchor = tr_element.findmeld('name_anchor')
                 processname = make_namespec(item['group'], item['name'])
-                anchor.attributes(href='tail.html?processname=%s' %
-                                  urllib.quote(processname))
+                #anchor.attributes(href='tail.html?processname=%s' %
+                #message =  self.callback()
+                kk_mapping=urllib.quote(processname).split('_')
+                anchor.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
+                #                  urllib.quote(processname))
                 anchor.content(processname)
 
                 actions = item['actions']
