@@ -78,7 +78,7 @@ html, body {
   min-height: 100%;
   height: auto !important;
   height: 100%;
-  width: 782px;
+  width: 880px;
   margin: 0 auto -31px;
 }
 #footer, 
@@ -154,7 +154,7 @@ th {
 }
 th.state {
   text-align: center;
-  width: 44px;
+  width: 36px;
 }
 th.desc {
   width: 140px;
@@ -163,7 +163,7 @@ th.name {
   width: 200px;
 }
 th.note {
-  width: 140px;
+  width: 200px;
 }
 th.action {
 }
