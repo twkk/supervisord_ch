@@ -449,6 +449,7 @@ class StatusView(MeldView):
         form = self.context.form
         response = self.context.response
         processname = form.get('processname')
+        processnote = form.get('processnote')
         action = form.get('action')
         message = form.get('message')
         kk_server_url = 'http://dev1.abrazotech.com'
@@ -525,7 +526,12 @@ class StatusView(MeldView):
                 anchor.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
                 #                  urllib.quote(processname))
                 anchor.content(processname)
-
+                note_text = tr_element.findmeld('note_text')
+                note_text.content(item['note'])
+                note_anchor2 = tr_element.findmeld('note_anchor')
+                note_anchor2.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
+                note_anchor2.content(note_text)
+                
                 actions = item['actions']
                 actionitem_td = tr_element.findmeld('actionitem_td')
 
