@@ -157,10 +157,13 @@ th.state {
   width: 44px;
 }
 th.desc {
-  width: 200px;
+  width: 140px;
 }
 th.name {
   width: 200px;
+}
+th.note {
+  width: 140px;
 }
 th.action {
 }
