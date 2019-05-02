@@ -400,6 +400,7 @@ class ServerOptions(Options):
     httpservers = ()
     unlink_pidfile = False
     unlink_socketfiles = False
+    cfnote = None
     mood = states.SupervisorStates.RUNNING
 
     def __init__(self):
@@ -440,6 +441,7 @@ class ServerOptions(Options):
                  "t", "strip_ansi", flag=1, default=0)
         self.add("profile_options", "supervisord.profile_options",
                  "", "profile_options=", profile_options, default=None)
+	self.add("cfnote", "supervisord.cfnote", "w:", "cfnote=")
         self.pidhistory = {}
         self.process_group_configs = []
         self.parse_criticals = []
@@ -618,6 +620,7 @@ class ServerOptions(Options):
         section.pidfile = existing_dirpath(get('pidfile', 'supervisord.pid'))
         section.identifier = get('identifier', 'supervisor')
         section.nodaemon = boolean(get('nodaemon', 'false'))
+	section.cfnote = get('cfnote', "kktest222ø")
 
         tempdir = tempfile.gettempdir()
         section.childlogdir = existing_directory(get('childlogdir', tempdir))
@@ -663,6 +666,7 @@ class ServerOptions(Options):
             group_name = process_or_group_name(section.split(':', 1)[1])
             programs = list_of_strings(get(section, 'programs', None))
             priority = integer(get(section, 'priority', 999))
+	    cfnote = list_of_strings(get(section, 'cfnote', None))
             group_processes = []
             for program in programs:
                 program_section = "program:%s" % program
@@ -675,7 +679,7 @@ class ServerOptions(Options):
                                                         ProcessConfig)
                 group_processes.extend(processes)
             groups.append(
-                ProcessGroupConfig(self, group_name, priority, group_processes)
+                ProcessGroupConfig(self, group_name, priority, cfnote,group_processes)
                 )
 
         # process "normal" homogeneous groups
@@ -688,7 +692,7 @@ class ServerOptions(Options):
             processes=self.processes_from_section(parser, section, program_name,
                                                   ProcessConfig)
             groups.append(
-                ProcessGroupConfig(self, program_name, priority, processes)
+                ProcessGroupConfig(self, program_name, priority, cfnote, processes)
                 )
 
         # process "event listener" homogeneous groups
@@ -753,7 +757,7 @@ class ServerOptions(Options):
             program_name = process_or_group_name(section.split(':', 1)[1])
             priority = integer(get(section, 'priority', 999))
             fcgi_expansions = {'program_name': program_name}
-
+	    cfnote = get(section, 'cfnote', None)
             # find proc_uid from "user" option
             proc_user = get(section, 'user', None)
             if proc_user is None:
@@ -878,6 +882,7 @@ class ServerOptions(Options):
         stderr_cmaxbytes = byte_size(get(section,'stderr_capture_maxbytes','0'))
         stderr_events = boolean(get(section, 'stderr_events_enabled','false'))
         serverurl = get(section, 'serverurl', None)
+	cfnote = get(section, 'cfnote', None)
         if serverurl and serverurl.strip().upper() == 'AUTO':
             serverurl = None
 
@@ -894,6 +899,9 @@ class ServerOptions(Options):
 
         process_name = process_or_group_name(
             get(section, 'process_name', '%(program_name)s', do_expand=False))
+	process_note = process_or_group_name(
+            get(section, 'process_note', '%(program_name)s', do_expand=False))
+	process_note = get(section, 'cfnote', 'kktest')
 
         if numprocs > 1:
             if not '%(process_num)' in process_name:
@@ -985,7 +993,8 @@ class ServerOptions(Options):
                 exitcodes=exitcodes,
                 redirect_stderr=redirect_stderr,
                 environment=environment,
-                serverurl=serverurl)
+                serverurl=serverurl,
+		cfnote=cfnote)
 
             programs.append(pconfig)
 
@@ -1363,7 +1372,7 @@ class ServerOptions(Options):
             limits.append(
                 {
                 'msg':('The minimum number of file descriptors required '
-                       'to run this process is %(min)s as per the "minfds" '
+                       'to run this process is %(min_limit)s as per the "minfds" '
                        'command-line argument or config file setting. '
                        'The current environment will only allow you '
                        'to open %(hard)s file descriptors.  Either raise '
@@ -1379,7 +1388,7 @@ class ServerOptions(Options):
             limits.append(
                 {
                 'msg':('The minimum number of available processes required '
-                       'to run this program is %(min)s as per the "minprocs" '
+                       'to run this program is %(min_limit)s as per the "minprocs" '
                        'command-line argument or config file setting. '
                        'The current environment will only allow you '
                        'to open %(hard)s processes.  Either raise '
@@ -1393,7 +1402,7 @@ class ServerOptions(Options):
                 })
 
         for limit in limits:
-            min = limit['min']
+            min_limit = limit['min']
             res = limit['resource']
             msg = limit['msg']
             name = limit['name']
@@ -1401,16 +1410,16 @@ class ServerOptions(Options):
 
             soft, hard = resource.getrlimit(res)
 
-            if (soft < min) and (soft != -1): # -1 means unlimited
-                if (hard < min) and (hard != -1):
+            if (soft < min_limit) and (soft != -1): # -1 means unlimited
+                if (hard < min_limit) and (hard != -1):
                     # setrlimit should increase the hard limit if we are
                     # root, if not then setrlimit raises and we print usage
-                    hard = min
+                    hard = min_limit
 
                 try:
-                    resource.setrlimit(res, (min, hard))
+                    resource.setrlimit(res, (min_limit, hard))
                     self.parse_infos.append('Increased %(name)s limit to '
-                                '%(min)s' % locals())
+                                '%(min_limit)s' % locals())
                 except (resource.error, ValueError):
                     self.usage(msg % locals())
 
@@ -1794,6 +1803,15 @@ class ProcessConfig(Config):
 
         return True
 
+    def get_path(self):
+        '''Return a list corresponding to $PATH that is configured to be set
+        in the process environment, or the system default.'''
+        if self.environment is not None:
+            path = self.environment.get('PATH')
+            if path is not None:
+                return path.split(os.pathsep)
+        return self.options.get_path()
+
     def create_autochildlogs(self):
         # temporary logfiles which are erased at start time
         get_autoname = self.options.get_autochildlog_name
@@ -1871,10 +1889,11 @@ class FastCGIProcessConfig(ProcessConfig):
         return dispatchers, p
 
 class ProcessGroupConfig(Config):
-    def __init__(self, options, name, priority, process_configs):
+    def __init__(self, options, name, priority, cfnote, process_configs):
         self.options = options
         self.name = name
         self.priority = priority
+	self.cfnote = cfnote
         self.process_configs = process_configs
 
     def __eq__(self, other):
@@ -1932,12 +1951,13 @@ class EventListenerPoolConfig(Config):
         return EventListenerPool(self)
 
 class FastCGIGroupConfig(ProcessGroupConfig):
-    def __init__(self, options, name, priority, process_configs, socket_config):
+    def __init__(self, options, name, priority, cfnote, process_configs, socket_config):
         ProcessGroupConfig.__init__(
             self,
             options,
             name,
             priority,
+	    cfnote,
             process_configs,
             )
         self.socket_config = socket_config

@@ -449,7 +449,6 @@ class StatusView(MeldView):
         form = self.context.form
         response = self.context.response
         processname = form.get('processname')
-        processnote = form.get('processnote')
         action = form.get('action')
         message = form.get('message')
         kk_server_url = 'http://dev1.abrazotech.com'
@@ -463,10 +462,11 @@ class StatusView(MeldView):
                 if message is NOT_DONE_YET:
                     return NOT_DONE_YET
                 if message is not None:
-                    #server_url = form['SERVER_URL']
-                    location = kk_server_url + ":" + '%s' % urllib.quote(message)
+                    server_url = form['SERVER_URL']
+		    location = server_url + "/" + '?message=%s' % urllib.quote(message)
+                    locationkk = kk_server_url + ":" + '%s' % urllib.quote(message)
                     response['headers']['Location'] = location
-                    #server_url + "/" + '?message=%s' % urllib.quote(message)
+		    response['headers']['Locationkk'] = locationkk
 
         supervisord = self.context.supervisord
         rpcinterface = RootRPCInterface(
@@ -493,6 +493,7 @@ class StatusView(MeldView):
                 'status':info['statename'],
                 'name':processname,
                 'group':groupname,
+		'cfnote':cfnote,
                 'actions':actions,
                 'state':info['state'],
                 'description':info['description'],
@@ -519,19 +520,17 @@ class StatusView(MeldView):
                 info_text.content(item['description'])
                 #TODO
                 anchor = tr_element.findmeld('name_anchor')
+		anchor2 = tr_element.findmeld('note_anchor')
                 processname = make_namespec(item['group'], item['name'])
                 #anchor.attributes(href='tail.html?processname=%s' %
                 #message =  self.callback()
                 kk_mapping=urllib.quote(processname).split('_')
-                anchor.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
+		anchor.attributes(href='tail.html?processname=%s' % urllib.quote(processname))
+		anchor2.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
                 #                  urllib.quote(processname))
                 anchor.content(processname)
-                note_text = tr_element.findmeld('note_text')
-                note_text.content(item['note'])
-                note_anchor2 = tr_element.findmeld('note_anchor')
-                note_anchor2.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
-                note_anchor2.content(note_text)
-                
+		anchor2.content(processname)
+
                 actions = item['actions']
                 actionitem_td = tr_element.findmeld('actionitem_td')
 
