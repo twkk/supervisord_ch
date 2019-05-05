@@ -230,6 +230,7 @@ class StatusView(MeldView):
         state = process.get_state()
         processname = urllib.quote(make_namespec(process.group.config.name,
                                                  process.config.name))
+	cfnote = urllib.quote(make_namespec(process.group.config.name, process.config.cfnote))
         start = {
         'name':'Start',
         'href':'index.html?processname=%s&amp;action=start' % processname,
@@ -449,6 +450,8 @@ class StatusView(MeldView):
         form = self.context.form
         response = self.context.response
         processname = form.get('processname')
+        xmlcfnote = form.get('cfnote')
+        #0503-1 get form config file cfnote
         action = form.get('action')
         message = form.get('message')
         kk_server_url = 'http://dev1.abrazotech.com'
@@ -475,6 +478,7 @@ class StatusView(MeldView):
             )
 
         processnames = []
+        xmlcfnote   = []
         groups = supervisord.process_groups.values()
         for group in groups:
             gprocnames = group.processes.keys()
@@ -489,11 +493,12 @@ class StatusView(MeldView):
                 supervisord.process_groups[groupname].processes[processname])
             sent_name = make_namespec(groupname, processname)
             info = rpcinterface.supervisor.getProcessInfo(sent_name)
+            xmlcfnote = rpcinterface.supervisor.getProcessInfo(sent_name)
             data.append({
                 'status':info['statename'],
                 'name':processname,
                 'group':groupname,
-		'cfnote':cfnote,
+                'cfnote':xmlcfnote,
                 'actions':actions,
                 'state':info['state'],
                 'description':info['description'],
@@ -520,17 +525,17 @@ class StatusView(MeldView):
                 info_text.content(item['description'])
                 #TODO
                 anchor = tr_element.findmeld('name_anchor')
-		anchor2 = tr_element.findmeld('note_anchor')
+                anchor2 = tr_element.findmeld('note_anchor')    #get from config file xml parsar note_anchor
                 processname = make_namespec(item['group'], item['name'])
+                processnote = make_namespec(item['group'], item['name'])
                 #anchor.attributes(href='tail.html?processname=%s' %
                 #message =  self.callback()
                 kk_mapping=urllib.quote(processname).split('_')
-		anchor.attributes(href='tail.html?processname=%s' % urllib.quote(processname))
-		anchor2.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
+                anchor.attributes(href='tail.html?processname=%s' % urllib.quote(processname))
+                anchor2.attributes(href= kk_server_url + ":" + '%s' % kk_mapping[0] )  #'%s' % urllib.quote(processname))
                 #                  urllib.quote(processname))
                 anchor.content(processname)
-		anchor2.content(processname)
-
+                anchor2.content(processnote)
                 actions = item['actions']
                 actionitem_td = tr_element.findmeld('actionitem_td')
 

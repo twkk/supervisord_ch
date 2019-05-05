@@ -441,7 +441,7 @@ class ServerOptions(Options):
                  "t", "strip_ansi", flag=1, default=0)
         self.add("profile_options", "supervisord.profile_options",
                  "", "profile_options=", profile_options, default=None)
-	self.add("cfnote", "supervisord.cfnote", "w:", "cfnote=")
+        self.add("cfnote", "supervisord.cfnote", "w:", "cfnote=", default="moreinfo")
         self.pidhistory = {}
         self.process_group_configs = []
         self.parse_criticals = []
@@ -620,8 +620,7 @@ class ServerOptions(Options):
         section.pidfile = existing_dirpath(get('pidfile', 'supervisord.pid'))
         section.identifier = get('identifier', 'supervisor')
         section.nodaemon = boolean(get('nodaemon', 'false'))
-	section.cfnote = get('cfnote', "kktest222ø")
-
+        section.cfnote = get('cfnote', None)
         tempdir = tempfile.gettempdir()
         section.childlogdir = existing_directory(get('childlogdir', tempdir))
         section.nocleanup = boolean(get('nocleanup', 'false'))
@@ -666,7 +665,7 @@ class ServerOptions(Options):
             group_name = process_or_group_name(section.split(':', 1)[1])
             programs = list_of_strings(get(section, 'programs', None))
             priority = integer(get(section, 'priority', 999))
-	    cfnote = list_of_strings(get(section, 'cfnote', None))
+            cfnote = list_of_strings(get(section, 'cfnote', None))
             group_processes = []
             for program in programs:
                 program_section = "program:%s" % program
@@ -757,7 +756,7 @@ class ServerOptions(Options):
             program_name = process_or_group_name(section.split(':', 1)[1])
             priority = integer(get(section, 'priority', 999))
             fcgi_expansions = {'program_name': program_name}
-	    cfnote = get(section, 'cfnote', None)
+            cfnote = get(section, 'cfnote', None)
             # find proc_uid from "user" option
             proc_user = get(section, 'user', None)
             if proc_user is None:
@@ -882,7 +881,7 @@ class ServerOptions(Options):
         stderr_cmaxbytes = byte_size(get(section,'stderr_capture_maxbytes','0'))
         stderr_events = boolean(get(section, 'stderr_events_enabled','false'))
         serverurl = get(section, 'serverurl', None)
-	cfnote = get(section, 'cfnote', None)
+        cfnote = get(section, 'cfnote', None)
         if serverurl and serverurl.strip().upper() == 'AUTO':
             serverurl = None
 
@@ -899,9 +898,9 @@ class ServerOptions(Options):
 
         process_name = process_or_group_name(
             get(section, 'process_name', '%(program_name)s', do_expand=False))
-	process_note = process_or_group_name(
+        process_note = process_or_group_name(
             get(section, 'process_note', '%(program_name)s', do_expand=False))
-	process_note = get(section, 'cfnote', 'kktest')
+        process_note = get(section, 'cfnote', 'kktest')
 
         if numprocs > 1:
             if not '%(process_num)' in process_name:
@@ -994,7 +993,7 @@ class ServerOptions(Options):
                 redirect_stderr=redirect_stderr,
                 environment=environment,
                 serverurl=serverurl,
-		cfnote=cfnote)
+                cfnote=cfnote)
 
             programs.append(pconfig)
 
@@ -1772,7 +1771,7 @@ class Config(object):
 
 class ProcessConfig(Config):
     req_param_names = [
-        'name', 'uid', 'command', 'directory', 'umask', 'priority',
+        'name', 'uid', 'command', 'directory', 'umask', 'priority', 'cfnote',
         'autostart', 'autorestart', 'startsecs', 'startretries',
         'stdout_logfile', 'stdout_capture_maxbytes',
         'stdout_events_enabled',
@@ -1893,7 +1892,7 @@ class ProcessGroupConfig(Config):
         self.options = options
         self.name = name
         self.priority = priority
-	self.cfnote = cfnote
+        self.cfnote = cfnote
         self.process_configs = process_configs
 
     def __eq__(self, other):
@@ -1957,7 +1956,7 @@ class FastCGIGroupConfig(ProcessGroupConfig):
             options,
             name,
             priority,
-	    cfnote,
+            cfnote,
             process_configs,
             )
         self.socket_config = socket_config
